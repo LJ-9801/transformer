@@ -39,10 +39,12 @@ class Multiheadattention{
     query.shape = {batch_size, seq_length_query, _n_heads, _single_head_dim};
     value.shape = {batch_size, seq_len, _n_heads, _single_head_dim};
 
+    // this is parallelizable
     auto k_tmp = batch_matmul<float>(&key, &this->k, nullptr);
     auto q_tmp = batch_matmul<float>(&query, &this->q, nullptr);
     auto v_tmp = batch_matmul<float>(&value, &this->v, nullptr);
 
+    // this is parallelizable
     k_tmp.transpose({1, 2});
     q_tmp.transpose({1, 2});
     v_tmp.transpose({1, 2});

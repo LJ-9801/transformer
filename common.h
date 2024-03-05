@@ -1,4 +1,7 @@
 #include <vector>
+#include <numeric>
+#include <assert.h>
+#include <pthread.h>
 
 using namespace std;
 
@@ -24,6 +27,11 @@ struct Tensor
         this->shape = {};
     }
 
+    bool empty()
+    {
+        return this->data.empty();
+    }
+
     void transpose(axis_t axes){
         // TODO
     }
@@ -42,6 +50,10 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
 
 template <typename T>
 Tensor<T> softmax(Tensor<T>* t, int axis)
-{
+{ 
+  if(t->empty()){
+    return Tensor<T>();
+  }
+
   return Tensor<T>();
 }
