@@ -11,17 +11,18 @@ class Multiheadattention{
     q(),k(), v(), out_weight(), out_bias() {}
 
   void generate_weights(){
-    std::vector<float> q_data(1.0, _single_head_dim * _single_head_dim);
-    std::vector<float> k_data(1.0, _single_head_dim * _single_head_dim);
-    std::vector<float> v_data(1.0, _single_head_dim * _single_head_dim);
-    std::vector<float> out_data(1.0, _n_heads * _single_head_dim * _embed_dim);
-    std::vector<float> out_bias(1.0, _embed_dim);
 
-    this->q = Tensor<float>(q_data, {_single_head_dim, _single_head_dim});
-    this->k = Tensor<float>(k_data, {_single_head_dim, _single_head_dim});
-    this->v = Tensor<float>(v_data, {_single_head_dim, _single_head_dim});
-    this->out_weight = Tensor<float>(out_data, {_n_heads * _single_head_dim, _embed_dim});
-    this->out_bias = Tensor<float>(out_bias, {_embed_dim});
+    this->q = Tensor<float>({_single_head_dim, _single_head_dim});
+    this->k = Tensor<float>({_single_head_dim, _single_head_dim});
+    this->v = Tensor<float>({_single_head_dim, _single_head_dim});
+    this->out_weight = Tensor<float>({_n_heads * _single_head_dim, _embed_dim});
+    this->out_bias = Tensor<float>({_embed_dim});
+
+    this->q.fill_one();
+    this->k.fill_one();
+    this->v.fill_one();
+    this->out_weight.fill_one();
+    this->out_bias.fill_one();
   }
 
   void load_weights(Tensor<float> q, Tensor<float> k, Tensor<float> v){
@@ -69,6 +70,8 @@ class Multiheadattention{
   }
   
   private:
+
+
 
   uint32_t _embed_dim;
   uint32_t _n_heads;
