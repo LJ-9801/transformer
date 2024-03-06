@@ -1,4 +1,7 @@
-#include "common.h"
+#ifndef MULTIHEADATTENTION_H
+#define MULTIHEADATTENTION_H
+
+#include "operations.h"
 
 
 class Multiheadattention{
@@ -82,3 +85,4 @@ class Multiheadattention{
   Tensor<float> out_weight;
   Tensor<float> out_bias;
 };
+#endif
