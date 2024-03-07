@@ -1,6 +1,7 @@
 #pragma once
 #ifndef KERNELS_H
 
+
 // @todo: needs to be optimized
 template <typename T>
 void gemm(const T* a, const T* b, const T* c, T* d, int M, int N, int K)

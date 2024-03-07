@@ -22,9 +22,9 @@ int main(){
         b_data, 
         {2, 2});
 
-  std::cout << "matmul" << std::endl;
   Tensor<float> c = batch_matmul<float>(&a, &b, nullptr);
-  std::cout << "finished" << std::endl;
+
+  c.transpose({1, 2});
 
   return 0;
 }

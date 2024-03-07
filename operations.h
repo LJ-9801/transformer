@@ -29,7 +29,6 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
   uint32_t total_size = std::accumulate(a->shape().begin(), a->shape().end(), 1, std::multiplies<uint32_t>());
   uint32_t nBatch = a->shape()[0] * a->shape()[1];
 
-  T* a_ptr = accessor<T>::const_ptr(*a);
   T* b_ptr = accessor<T>::const_ptr(*b);
   T* c_ptr = nullptr;
   if(c != nullptr){
@@ -41,8 +40,8 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
 
   #pragma omp parallel for
   for(int i = 0; i < nBatch; i++){
-    a_ptr = a_ptr + i * M * Ka; 
-    out_ptr = out_ptr + i * M * N; 
+    T* a_ptr = accessor<T>::const_ptr(*a) + i * M * Ka;
+    T* out_ptr = accessor<T>::get(out) + i * M * N;
     gemm(a_ptr, b_ptr, c_ptr, out_ptr, M, N, Ka);
   }
 

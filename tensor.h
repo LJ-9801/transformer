@@ -20,7 +20,6 @@ struct accessor;
 template <typename T>
 struct Tensor
 {
-
     public:
     Tensor(T* data, shape_t shape) {
         this->_data = data;
@@ -66,9 +65,9 @@ struct Tensor
     }
 
     void view(shape_t shape){
-        this->_shape = shape;
         size_t new_size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>());
         assert(new_size == this->_size && "The new shape must have the same size as the old shape");
+        this->_shape = shape;
     }
 
     shape_t shape() const {
@@ -83,8 +82,58 @@ struct Tensor
         return this->_data == nullptr;
     }
 
-    void transpose(axis_t axes){
-        // TODO
+    // TODO this is so inefficient as we are using
+    // vector to store intermediate indexes
+    void transpose(axis_t axes){ 
+      if(this->empty()){
+        return;
+      }
+
+      assert(axes.size() == 2 && "The axes must have two elements");
+      if(axes[0] < 0){
+        axes[0] = this->_shape.size() + axes[0];
+      }
+
+      if(axes[1] < 0){
+        axes[1] = this->_shape.size() + axes[1];
+      }
+
+      shape_t new_shape = this->_shape;
+      std::swap(new_shape[axes[0]], new_shape[axes[1]]);
+
+      // calculate stride
+      std::vector<uint32_t> old_stride(this->_shape.size(), 1);
+      std::vector<uint32_t> new_stride(new_shape.size(), 1);
+      std::vector<uint32_t> old_position(this->_shape.size(), 0);
+
+      for(int i = this->_shape.size() - 2; i >= 0; i--){
+        old_stride[i] = old_stride[i + 1] * this->_shape[i + 1];
+      }
+
+      for(int i = new_shape.size() - 2; i >= 0; i--){
+        new_stride[i] = new_stride[i + 1] * new_shape[i + 1];
+      }
+
+      T* new_data = new T[this->size()];
+      for(int i = 0; i < this->size(); i++){
+        // calculate old position
+        for(int j = 0; j < old_position.size(); j++){
+          old_position[j] = (i / old_stride[j]) % this->_shape[j];
+        }
+
+        // calculate new position
+        std::swap(old_position[axes[0]], old_position[axes[1]]);
+
+        int new_index = 0;
+        for(int j = 0; j < old_position.size(); j++){
+          new_index += old_position[j] * new_stride[j];
+        }
+        new_data[new_index] = this->_data[i];
+      }
+
+      delete[] this->_data;
+      this->_data = new_data;
+      this->_shape = new_shape;
     }
 
     Tensor<T>& operator/=(const uint32_t& scalar){
