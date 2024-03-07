@@ -5,14 +5,17 @@
 #include <assert.h>
 #include <pthread.h>
 #include <iostream>
+#include <memory>
 
 #include "kernels.h"
 
 using namespace std;
 
+#define GET_SIZE(shape) std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>())
 
 typedef vector<uint32_t> shape_t;
 typedef vector<int32_t> axis_t;
+typedef std::unique_ptr<uint32_t[]> stride_t;
 
 template <typename T>
 struct accessor;
@@ -24,11 +27,11 @@ struct Tensor
     Tensor(T* data, shape_t shape) {
         this->_data = data;
         this->_shape = shape;
-        this->_size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>());
+        this->_size = GET_SIZE(shape);
     }
 
     Tensor(shape_t shape) {
-        this->_size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>());
+        this->_size = GET_SIZE(shape); 
         this->_data = new T[this->size()];
         this->_shape = shape;
     }
@@ -65,7 +68,7 @@ struct Tensor
     }
 
     void view(shape_t shape){
-        size_t new_size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>());
+        size_t new_size = GET_SIZE(shape); 
         assert(new_size == this->_size && "The new shape must have the same size as the old shape");
         this->_shape = shape;
     }
@@ -115,6 +118,8 @@ struct Tensor
       }
 
       T* new_data = new T[this->size()];
+
+      #pragma omp parallel for
       for(int i = 0; i < this->size(); i++){
         // calculate old position
         for(int j = 0; j < old_position.size(); j++){
@@ -195,10 +200,11 @@ struct Tensor
       }
     }
 
-
     T* _data;
     shape_t _shape;
+    stride_t _stride;
     size_t _size;
+
 
 };
 
