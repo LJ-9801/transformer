@@ -24,7 +24,15 @@ int main(){
 
   Tensor<float> c = batch_matmul<float>(&a, &b, nullptr);
 
-  c.transpose({1, 2});
+  //c.transpose(1, 2);
+
+  Tensor<float> e = softmax<float>(&a, 0);
+
+ 
+  for(int i = 0; i < e.size(); i++){
+    std::cout << e.data()[i] << std::endl;
+  }
+  
 
   return 0;
 }

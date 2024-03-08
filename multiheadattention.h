@@ -48,11 +48,11 @@ class Multiheadattention{
     auto v_tmp = batch_matmul<float>(&value, &this->v, nullptr);
 
     // this is parallelizable
-    k_tmp.transpose({1, 2});
-    q_tmp.transpose({1, 2});
-    v_tmp.transpose({1, 2});
+    k_tmp.transpose(1, 2);
+    q_tmp.transpose(1, 2);
+    v_tmp.transpose(1, 2);
 
-    k_tmp.transpose({-1, -2});
+    k_tmp.transpose(-1, -2);
 
     auto product = batch_matmul<float>(&q_tmp, &k_tmp, nullptr);
 
@@ -62,7 +62,7 @@ class Multiheadattention{
 
     scores = batch_matmul<float>(&scores, &v_tmp, nullptr);
 
-    scores.transpose({1, 2});
+    scores.transpose(1, 2);
 
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});
 

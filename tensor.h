@@ -15,7 +15,7 @@ using namespace std;
 
 typedef vector<uint32_t> shape_t;
 typedef vector<int32_t> axis_t;
-typedef std::unique_ptr<uint32_t[]> stride_t;
+typedef vector<uint32_t> stride_t;
 
 template <typename T>
 struct accessor;
@@ -87,22 +87,21 @@ struct Tensor
 
     // TODO this is so inefficient as we are using
     // vector to store intermediate indexes
-    void transpose(axis_t axes){ 
+    void transpose(int8_t axis1, int8_t axis2){ 
       if(this->empty()){
         return;
       }
 
-      assert(axes.size() == 2 && "The axes must have two elements");
-      if(axes[0] < 0){
-        axes[0] = this->_shape.size() + axes[0];
+      if(axis1 < 0){
+        axis1 = this->_shape.size() + axis1;
       }
 
-      if(axes[1] < 0){
-        axes[1] = this->_shape.size() + axes[1];
+      if(axis2 < 0){
+        axis2 = this->_shape.size() + axis2;
       }
 
       shape_t new_shape = this->_shape;
-      std::swap(new_shape[axes[0]], new_shape[axes[1]]);
+      std::swap(new_shape[axis1], new_shape[axis2]);
 
       // calculate stride
       std::vector<uint32_t> old_stride(this->_shape.size(), 1);
@@ -127,7 +126,7 @@ struct Tensor
         }
 
         // calculate new position
-        std::swap(old_position[axes[0]], old_position[axes[1]]);
+        std::swap(old_position[axis1], old_position[axis2]);
 
         int new_index = 0;
         for(int j = 0; j < old_position.size(); j++){
