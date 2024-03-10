@@ -13,9 +13,13 @@ using namespace std;
 
 #define GET_SIZE(shape) std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>())
 
+
+
 typedef vector<uint32_t> shape_t;
 typedef vector<int32_t> axis_t;
 typedef vector<uint32_t> stride_t;
+
+stride_t calculate_stride(const shape_t& shape);
 
 template <typename T>
 struct accessor;
@@ -28,12 +32,14 @@ struct Tensor
         this->_data = data;
         this->_shape = shape;
         this->_size = GET_SIZE(shape);
+        this->_stride = calculate_stride(shape);
     }
 
     Tensor(shape_t shape) {
         this->_size = GET_SIZE(shape); 
         this->_data = new T[this->size()];
         this->_shape = shape;
+        this->_stride = calculate_stride(shape);
     }
 
     Tensor(const Tensor<T>& other){
@@ -41,11 +47,13 @@ struct Tensor
         this->_data = nullptr;
         this->_shape = {};
         this->_size = 0;
+        this->_stride = {};
         return;
       }
 
       this->_data = new T[other._size];
       this->_shape = other.shape();
+      this->_stride = other._stride;
       this->_size = other.size();
       this->copy(other._data);
     }
@@ -54,6 +62,7 @@ struct Tensor
         this->_data = nullptr;
         this->_shape = {};
         this->_size = 0;
+        this->_stride = {};
     }
 
     ~Tensor() {
@@ -75,6 +84,10 @@ struct Tensor
 
     shape_t shape() const {
         return this->_shape;
+    }
+
+    stride_t stride() const {
+        return this->_stride;
     }
 
     size_t size() const {
@@ -187,6 +200,13 @@ struct Tensor
         }
     }
 
+    void arange(){
+        #pragma omp parallel for
+        for(int i = 0; i < _size; i++){
+            this->_data[i] = i;
+        }
+    }
+
     template <typename U>
     friend struct accessor;
 
@@ -213,5 +233,13 @@ struct accessor {
   static T* const_ptr(const Tensor<T>& t) { return t._data;}
   static T* get(Tensor<T>& t) { return t._data;}
 };
+
+stride_t calculate_stride(const shape_t& shape){
+  stride_t stride(shape.size(), 1);
+  for(int i = shape.size() - 2; i >= 0; i--){
+    stride[i] = stride[i + 1] * shape[i + 1];
+  }
+  return stride;
+}
 #endif
 

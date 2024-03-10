@@ -25,11 +25,11 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
   uint32_t N = b->shape()[b->shape().size() - 1];
 
   assert(Ka == Kb && "The last two dimensions of A and B must be the same");
-  assert(a->shape().size() == 4 && b->shape().size() == 2 && "A has to be a 4D tensor and B has to be a 2D tensor");
-
+  bool condition = (a->shape().size() == 4 && b->shape().size() == 2) || (a->shape().size() == 4 && b->shape().size() == 4);
+  assert(condition && "The shape of A and B is not supported");
   // here we are assuming size A > size B, 
   // fow now let's just consider A has dim 4 and B has dim 2
-  uint32_t total_size = std::accumulate(a->shape().begin(), a->shape().end(), 1, std::multiplies<uint32_t>());
+  uint32_t total_size = a->size();
   uint32_t nBatch = a->shape()[0] * a->shape()[1];
 
   T* b_ptr = accessor<T>::const_ptr(*b);
@@ -41,9 +41,14 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
   Tensor<T> out = Tensor<T>({a->shape()[0], a->shape()[1], M, N});
   T* out_ptr = accessor<T>::get(out);
 
+
+  // we need to handle both a is 4D and b is 2D and also a is 4D and b is also 4D
   #pragma omp parallel for
   for(int i = 0; i < nBatch; i++){
     T* a_ptr = accessor<T>::const_ptr(*a) + i * M * Ka;
+    if(b->shape().size() == 4){
+      b_ptr = accessor<T>::const_ptr(*b) + i * N * Kb;
+    }
     T* out_ptr = accessor<T>::get(out) + i * M * N;
     gemm(a_ptr, b_ptr, c_ptr, out_ptr, M, N, Ka);
   }
@@ -111,5 +116,32 @@ Tensor<T> softmax(Tensor<T>* t, int axis)
   }
 
   return out; 
+}
+
+
+template <typename T>
+Tensor<T> expand(Tensor<T>* src, shape_t new_shape)
+{
+
+  Tensor<T> trg = Tensor<T>(new_shape);
+  uint32_t src_size = src->size();
+  uint32_t trg_size = trg.size();
+
+  uint32_t dim = src->shape().size();
+
+  T* src_ptr = accessor<T>::const_ptr(*src);
+  T* trg_ptr = accessor<T>::get(trg);
+
+  #pragma omp parallel for
+  for (int i = 0; i < trg_size; ++i) {
+    int src_index = 0;
+    for(int j = 0; j < dim; j++){
+      int idx = (i / trg.stride()[j]) % src->shape()[j];
+      src_index += idx * src->stride()[j];
+    }
+    trg_ptr[i] = src_ptr[src_index];
+  } 
+
+  return trg;
 }
 #endif

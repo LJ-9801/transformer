@@ -21,4 +21,36 @@ void gemm(const T* a, const T* b, const T* c, T* d, int M, int N, int K)
     }
   }
 }
+
+
+int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
+    int index = 0;
+    for (size_t i = 0; i < dim; ++i) {
+        index += indices[i] * strides[i];
+    }
+    return index;
+}
+
+// this function is used to expand a tensor
+// for example there is a tensor with shape [32, 1, 512]
+// and we want to expand it to [32, 10, 512]
+template <typename T>
+void expand_kernel(T* src, T* trg,
+            uint32_t* src_shape, uint32_t* trg_shape, 
+            uint32_t* src_stride, uint32_t* trg_stride, 
+            uint32_t src_size, uint32_t trg_size,
+            uint32_t dim){
+  
+  #pragma omp parallel for
+  for (int i = 0; i < trg_size; ++i) {
+    uint32_t indices[3] = {0, 0, 0};
+    uint32_t index = i;
+    for (int j = dim - 1; j >= 0; --j) {
+      indices[j] = index / trg_stride[j];
+      index = index % trg_stride[j];
+    }
+    int src_index = get_index(indices, src_stride, dim);
+    trg[i] = src[src_index]; 
+  }
+}
 #endif
