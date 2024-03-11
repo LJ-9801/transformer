@@ -94,6 +94,10 @@ struct Tensor
         return this->_size;
     }
 
+    uint16_t ndim() const {
+        return this->_shape.size();
+    }
+
     bool empty() const {
         return this->_data == nullptr;
     }
