@@ -63,7 +63,7 @@ void expand_kernel(T* src, T* trg,
   
   #pragma omp parallel for
   for (int i = 0; i < trg_size; ++i) {
-    uint32_t indices[3] = {0, 0, 0};
+    uint32_t indices[dim];
     uint32_t index = i;
     for (int j = dim - 1; j >= 0; --j) {
       indices[j] = index / trg_stride[j];
@@ -80,5 +80,30 @@ void dot(const T* in1, const T* in2, T *output, const size_t size){
   for(int i = 0; i < size; i++){
     *output += in1[i] * in2[i];
   } 
+}
+
+template <typename T>
+void tranpose_tensor(const T* input, T** output, 
+                    const uint32_t *old_shape, const uint32_t *new_shape,
+                    const uint32_t *old_stride, const uint32_t *new_stride,
+                    const size_t size, const uint32_t dim,
+                    const uint16_t axis1, const uint16_t axis2){
+  
+  #pragma omp parallel for
+  for(size_t i = 0; i<size; i++){
+    uint32_t old_pos[dim];
+    for(uint32_t j = 0; j < dim; j++){
+      old_pos[j] = (i / old_stride[j]) % old_shape[j];
+    }
+
+    std::swap(old_pos[axis1], old_pos[axis2]);
+
+    uint32_t new_index = 0;
+    for(uint32_t j = 0; j < dim; j++){
+      new_index += old_pos[j] * new_stride[j];
+    }
+    (*output)[new_index] = input[i];
+  }
+
 }
 #endif

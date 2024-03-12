@@ -13,9 +13,9 @@ int main(){
   mha.generate_weights();
 
   auto out = mha.forward(key, query, value);
-
+  
   for(int i = 0; i < out.size(); i++){
-    std::cout << out.data()[i] << " ";
+    std::cout << out[i] << " ";
   }
   std::cout << std::endl;
 

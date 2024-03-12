@@ -13,13 +13,10 @@ using namespace std;
 
 #define GET_SIZE(shape) std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<uint32_t>())
 
-
-
 typedef vector<uint32_t> shape_t;
-typedef vector<int32_t> axis_t;
 typedef vector<uint32_t> stride_t;
 
-stride_t calculate_stride(const shape_t& shape);
+static inline stride_t calculate_stride(const shape_t& shape);
 
 template <typename T>
 struct accessor;
@@ -37,7 +34,7 @@ struct Tensor
 
     Tensor(shape_t shape) {
         this->_size = GET_SIZE(shape); 
-        this->_data = new T[this->size()];
+        this->_data = this->alloc(this->_size); 
         this->_shape = shape;
         this->_stride = calculate_stride(shape);
     }
@@ -51,7 +48,7 @@ struct Tensor
         return;
       }
 
-      this->_data = new T[other._size];
+      this->_data = this->alloc(other.size()); 
       this->_shape = other.shape();
       this->_stride = other.stride();
       this->_size = other.size();
@@ -66,10 +63,7 @@ struct Tensor
     }
 
     ~Tensor() {
-      if(this->_data != nullptr){
-        delete[] this->_data;
-        this->_data = nullptr;
-      }
+      this->clean(); 
     }
 
     T* data() const {
@@ -77,7 +71,8 @@ struct Tensor
     }
 
     void view(shape_t shape){
-        assert(GET_SIZE(shape) == this->_size && "The new shape must have the same size as the old shape");
+        assert(GET_SIZE(shape) == this->_size && 
+              "The new shape must have the same size as the old shape");
         this->_shape = shape;
     }
 
@@ -103,7 +98,7 @@ struct Tensor
 
     // TODO this is so inefficient as we are using
     // vector to store intermediate indexes
-    void transpose(int8_t axis1, int8_t axis2){ 
+    void transpose(int16_t axis1, int16_t axis2){ 
       if(this->empty()){
         return;
       }
@@ -120,40 +115,20 @@ struct Tensor
       std::swap(new_shape[axis1], new_shape[axis2]);
 
       // calculate stride
-      std::vector<uint32_t> old_stride(this->_shape.size(), 1);
-      std::vector<uint32_t> new_stride(new_shape.size(), 1);
+      stride_t new_stride = calculate_stride(new_shape);
 
-      for(int i = this->_shape.size() - 2; i >= 0; i--){
-        old_stride[i] = old_stride[i + 1] * this->_shape[i + 1];
-      }
+      T* new_data = this->alloc(this->size()); 
 
-      for(int i = new_shape.size() - 2; i >= 0; i--){
-        new_stride[i] = new_stride[i + 1] * new_shape[i + 1];
-      }
+      tranpose_tensor(this->_data, &new_data, 
+                      this->_shape.data(), new_shape.data(),
+                      this->_stride.data(), new_stride.data(),
+                      this->size(), this->_shape.size(),
+                      axis1, axis2);
 
-      T* new_data = new T[this->size()];
-
-      #pragma omp parallel for
-      for(int i = 0; i < this->size(); i++){
-        // calculate old position
-        std::vector<uint32_t> old_position(this->_shape.size(), 0);
-        for(int j = 0; j < old_position.size(); j++){
-          old_position[j] = (i / old_stride[j]) % this->_shape[j];
-        }
-
-        // calculate new position
-        std::swap(old_position[axis1], old_position[axis2]);
-
-        int new_index = 0;
-        for(int j = 0; j < old_position.size(); j++){
-          new_index += old_position[j] * new_stride[j];
-        }
-        new_data[new_index] = this->_data[i];
-      }
-
-      delete[] this->_data;
+      this->clean(); 
       this->_data = new_data;
       this->_shape = new_shape;
+      this->_stride = new_stride;
     }
 
     Tensor<T>& operator/=(const T& scalar){
@@ -176,9 +151,7 @@ struct Tensor
       }
 
       if(this->_data != nullptr){
-        // @todo return this to the pool 
-        // instead of deleting it
-        delete[] this->_data;
+        this->clean();
       }
 
       if(other.empty()){
@@ -188,12 +161,16 @@ struct Tensor
         return *this;
       }
 
-      this->_data = new T[other._size];
+      this->_data = this->alloc(other.size()); 
       this->_shape = other.shape();
       this->_size = other.size();
       this->copy(other._data); 
       
       return *this;
+    }
+
+    T operator[](uint64_t index) const {
+        return this->_data[index];
     }
 
     Tensor<T>& fill_one(){
@@ -227,12 +204,21 @@ struct Tensor
       }
     }
 
+    void clean(){
+      if(this->_data != nullptr){
+        delete[] this->_data;
+        this->_data = nullptr;
+      }
+    }
+
+    T* alloc(size_t size){
+      return new T[size];
+    }
+
     T* _data;
     shape_t _shape;
     stride_t _stride;
     size_t _size;
-
-
 };
 
 // accessor for tensor
@@ -242,7 +228,7 @@ struct accessor {
   static T* get(Tensor<T>& t) { return t._data;}
 };
 
-stride_t calculate_stride(const shape_t& shape){
+static inline stride_t calculate_stride(const shape_t& shape){
   stride_t stride(shape.size(), 1);
   for(int i = shape.size() - 2; i >= 0; i--){
     stride[i] = stride[i + 1] * shape[i + 1];

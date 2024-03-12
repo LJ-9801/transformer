@@ -43,7 +43,6 @@ class Multiheadattention{
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
-
     auto k_tmp = k_linear.forward(key);
     auto q_tmp = q_linear.forward(query);
     auto v_tmp = v_linear.forward(value);
