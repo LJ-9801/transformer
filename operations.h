@@ -183,6 +183,7 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b)
   }
   new_shape.push_back(b->shape()[b->ndim() - 1]);
   Tensor<T> out = Tensor<T>(new_shape);
+  
   uint32_t batch_size = std::accumulate(new_shape.begin(), 
                                         new_shape.end() - 2, 
                                         1, std::multiplies<uint32_t>());
@@ -199,8 +200,7 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b)
 }
 
 
-// simple case: A has higher dimension then B,
-// B has only 1 dimension
+// simple case: A has higher dimension, B has only 1 dimension
 template <typename T>
 Tensor<T> broadcast_add(const Tensor<T>* a, const Tensor<T>* b){
   Tensor<T> out = Tensor<T>(a->shape());

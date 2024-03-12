@@ -12,26 +12,26 @@ class Multiheadattention{
     _embed_dim(embed_dim), 
     _n_heads(n_heads), 
     _single_head_dim(embed_dim / n_heads),
-    q(),k(), v(), out_weight(), out_bias() {}
+    q_linear(_single_head_dim, _single_head_dim, false),
+    k_linear(_single_head_dim, _single_head_dim, false),
+    v_linear(_single_head_dim, _single_head_dim, false),
+    out_linear(_n_heads*_single_head_dim, _embed_dim) {}
 
   void generate_weights(){
-    this->q = Tensor<float>({_single_head_dim, _single_head_dim});
-    this->k = Tensor<float>({_single_head_dim, _single_head_dim});
-    this->v = Tensor<float>({_single_head_dim, _single_head_dim});
-    this->out_weight = Tensor<float>({_n_heads * _single_head_dim, _embed_dim});
-    this->out_bias = Tensor<float>({_embed_dim});
 
-    this->q.fill_one();
-    this->k.fill_one();
-    this->v.fill_one();
-    this->out_weight.fill_one();
-    this->out_bias.fill_one();
+    this->q_linear.generate_weights();
+    this->k_linear.generate_weights();
+    this->v_linear.generate_weights();
+    this->out_linear.generate_weights();
   }
 
-  void load_weights(Tensor<float> q, Tensor<float> k, Tensor<float> v){
-    this->q = q;
-    this->k = k;
-    this->v = v;
+  void load_weights(std::pair<Tensor<float>, Tensor<float>> q,
+                    std::pair<Tensor<float>, Tensor<float>> k,
+                    std::pair<Tensor<float>, Tensor<float>> v){
+
+    this->q_linear.load_weights(q.first, q.second);
+    this->k_linear.load_weights(k.first, k.second);
+    this->v_linear.load_weights(v.first, v.second);
   }
 
   Tensor<float> forward(Tensor<float> key, Tensor<float> query, Tensor<float> value){
@@ -43,10 +43,9 @@ class Multiheadattention{
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
-    // this is parallelizable
-    Tensor<float> k_tmp = batch_matmul<float>(&key, &this->k);
-    Tensor<float> q_tmp = batch_matmul<float>(&query, &this->q);
-    Tensor<float> v_tmp = batch_matmul<float>(&value, &this->v);
+    auto k_tmp = k_linear.forward(key);
+    auto q_tmp = q_linear.forward(query);
+    auto v_tmp = v_linear.forward(value);
 
     // this is parallelizable
     k_tmp.transpose(1, 2);
@@ -55,21 +54,18 @@ class Multiheadattention{
 
     k_tmp.transpose(-1, -2);
 
-    Tensor<float> product = batch_matmul<float>(&q_tmp, &k_tmp);
+    auto product = batch_matmul<float>(&q_tmp, &k_tmp);
 
     product /= sqrt(_single_head_dim);
 
-    Tensor<float> scores = softmax<float>(&product, -1);
+    auto scores = softmax<float>(&product, -1);
 
     scores = batch_matmul<float>(&scores, &v_tmp);
 
     scores.transpose(1, 2);
-
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});
 
-    Tensor<float> output = batch_matmul<float>(&scores, &this->out_weight);
-
-    output = broadcast_add<float>(&output, &this->out_bias);
+    auto output = out_linear.forward(scores);
 
     return output;
   }
@@ -80,10 +76,9 @@ class Multiheadattention{
   uint32_t _n_heads;
   uint32_t _single_head_dim;
 
-  Tensor<float> q;
-  Tensor<float> k;
-  Tensor<float> v;
-  Tensor<float> out_weight;
-  Tensor<float> out_bias;
+  Linear q_linear;
+  Linear k_linear;
+  Linear v_linear;
+  Linear out_linear;
 };
 #endif

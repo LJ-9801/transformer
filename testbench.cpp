@@ -19,9 +19,9 @@ int main(){
   Tensor<float> out = mha.forward(key, query, value);
 
   for(int i = 0; i < out.size(); i++){
-    cout << out.data()[i] << " ";
+    std::cout << out.data()[i] << " "; 
   }
-  cout << endl;
+  std::cout << std::endl;
 
   return 0;
 }

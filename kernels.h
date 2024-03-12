@@ -3,6 +3,7 @@
 #define KERNELS_H
 #include <cstdint>
 #include <cstddef>
+#include <iostream>
 
 
 // @todo: needs to be optimized

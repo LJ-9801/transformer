@@ -26,8 +26,44 @@ class Linear{
     this->_bias = bias;
   }
 
-  Tensor<float> forward(Tensor<float> input){
-    Tensor<float> out = batch_matmul<float>(&input, &this->_weight);
+  bool isbias() const {
+    return this->_isbias;
+  }
+
+  Tensor<float> forward(Tensor<float>& input){
+    assert(input.ndim() > 1 && "Input tensor must have at least 2 dimensions");
+    shape_t shape = shape_t();
+    for(size_t i = 0; i < input.shape().size() - 1; i++){
+      shape.push_back(input.shape()[i]);
+    }
+    shape.push_back(this->_out_features);
+    Tensor<float> out = Tensor<float>(shape);
+    uint32_t batch_size = std::accumulate(shape.begin(), 
+                          shape.end() - 2, 1, std::multiplies<uint32_t>());
+    uint32_t slices = out.size() / batch_size;
+
+    uint32_t M = input.shape()[input.ndim() - 2];
+    uint32_t N = this->_out_features;
+    uint32_t K = this->_in_features;
+
+    #pragma omp parallel for
+    for(int i = 0; i < batch_size; i++){
+      gemm_nt<float>(
+              accessor<float>::const_ptr(input) + i * M * K, 
+              accessor<float>::const_ptr(this->_weight), 
+              accessor<float>::get(out) + i * M * N, 
+              M, N, K);
+
+      if(this->_isbias){
+        #pragma unrroll 
+        for(int j = 0; j < slices; j++){
+          float* out_ptr = accessor<float>::get(out) + i * slices + j;
+          float* bias_ptr = accessor<float>::const_ptr(this->_bias);
+          *out_ptr += *bias_ptr; 
+        }
+      }
+    }
+                                         
     return out;
   }
 
