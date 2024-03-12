@@ -197,4 +197,30 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b)
 
   return out;
 }
+
+
+// simple case: A has higher dimension then B,
+// B has only 1 dimension
+template <typename T>
+Tensor<T> broadcast_add(const Tensor<T>* a, const Tensor<T>* b){
+  Tensor<T> out = Tensor<T>(a->shape());
+  shape_t new_shape = a->shape();
+  uint32_t batch_size = std::accumulate(new_shape.begin(), 
+                                        new_shape.end() - 1, 
+                                        1, std::multiplies<uint32_t>()); 
+
+  uint32_t slices = a->size() / batch_size;
+
+  #pragma omp parallel for
+  for(int i = 0; i < batch_size; i++){
+    #pragma unroll
+    for(int j = 0; j < slices; j++){
+      T* out_ptr = accessor<T>::get(out) + i * slices + j;
+      T* a_ptr = accessor<T>::const_ptr(*a) + i * slices + j;
+      T* b_ptr = accessor<T>::const_ptr(*b);
+      *out_ptr = *a_ptr + *b_ptr;
+    } 
+  } 
+  return out;
+}
 #endif

@@ -2,6 +2,7 @@
 #define MULTIHEADATTENTION_H
 
 #include "operations.h"
+#include "linear.h"
 
 
 class Multiheadattention{
@@ -65,16 +66,15 @@ class Multiheadattention{
     scores.transpose(1, 2);
 
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});
-    
 
     Tensor<float> output = batch_matmul<float>(&scores, &this->out_weight);
+
+    output = broadcast_add<float>(&output, &this->out_bias);
 
     return output;
   }
   
   private:
-
-
 
   uint32_t _embed_dim;
   uint32_t _n_heads;

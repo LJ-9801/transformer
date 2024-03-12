@@ -22,8 +22,21 @@ void gemm(const T* a, const T* b, T* d, int M, int N, int K)
   }
 }
 
-
-#include <cstddef>
+template <typename T>
+void gemm_nt(const T* a, const T* b, T* d, int M, int N, int K)
+{
+  #pragma omp parallel for
+  for(int i = 0; i < M; i++){
+    for(int j = 0; j < N; j++){
+      T sum = 0;
+      #pragma unroll
+      for(int k = 0; k < K; k++){
+        sum += a[i * K + k] * b[j * K + k];
+      }
+      d[i * N + j] = sum; 
+    }
+  }
+}
 
 int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
   int index = 0;
@@ -55,7 +68,6 @@ void expand_kernel(T* src, T* trg,
     trg[i] = src[src_index]; 
   }
 }
-
 template <typename T>
 void dot(const T* in1, const T* in2, T *output, const size_t size){
   *output = 0;
