@@ -15,9 +15,9 @@ class Linear{
     }
 
   void generate_weights(){
-    this->_weight.fill_one();
+    this->_weight = this->_weight.fill_one();
     if(this->_isbias){
-      this->_bias.fill_one();
+      this->_bias = this->_bias.fill_one();
     } 
   }
 

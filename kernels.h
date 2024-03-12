@@ -25,6 +25,8 @@ void gemm(const T* a, const T* b, T* d, int M, int N, int K)
   }
 }
 
+
+// @todo: needs to be optimized
 template <typename T>
 void gemm_nt(const T* a, const T* b, T* d, int M, int N, int K)
 {

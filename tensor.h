@@ -53,7 +53,7 @@ struct Tensor
 
       this->_data = new T[other._size];
       this->_shape = other.shape();
-      this->_stride = other._stride;
+      this->_stride = other.stride();
       this->_size = other.size();
       this->copy(other._data);
     }
@@ -77,8 +77,7 @@ struct Tensor
     }
 
     void view(shape_t shape){
-        size_t new_size = GET_SIZE(shape); 
-        assert(new_size == this->_size && "The new shape must have the same size as the old shape");
+        assert(GET_SIZE(shape) == this->_size && "The new shape must have the same size as the old shape");
         this->_shape = shape;
     }
 
@@ -197,18 +196,22 @@ struct Tensor
       return *this;
     }
 
-    void fill_one(){
+    Tensor<T>& fill_one(){
         #pragma omp parallel for
         for(int i = 0; i < _size; i++){
             this->_data[i] = 1;
         }
+
+        return *this;
     }
 
-    void arange(){
+    Tensor<T>& arange(){
         #pragma omp parallel for
         for(int i = 0; i < _size; i++){
             this->_data[i] = i;
         }
+
+        return *this;
     }
 
     template <typename U>
