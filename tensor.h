@@ -123,7 +123,6 @@ struct Tensor
       // calculate stride
       std::vector<uint32_t> old_stride(this->_shape.size(), 1);
       std::vector<uint32_t> new_stride(new_shape.size(), 1);
-      std::vector<uint32_t> old_position(this->_shape.size(), 0);
 
       for(int i = this->_shape.size() - 2; i >= 0; i--){
         old_stride[i] = old_stride[i + 1] * this->_shape[i + 1];
@@ -138,6 +137,7 @@ struct Tensor
       #pragma omp parallel for
       for(int i = 0; i < this->size(); i++){
         // calculate old position
+        std::vector<uint32_t> old_position(this->_shape.size(), 0);
         for(int j = 0; j < old_position.size(); j++){
           old_position[j] = (i / old_stride[j]) % this->_shape[j];
         }
