@@ -104,27 +104,98 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
     return Tensor<T>();
   }
 
-  bool condition = false;
-  shape_t new_shape = shape_t();
+  if(b->ndim() > a->ndim()){
+    assert(false && "The second tensor should have less or equal dimensions than the first tensor");
+  }
 
-  if(a->ndim() == b->ndim()){
+  bool condition = false;
+  //shape_t new_shape = shape_t();
+
+  if(a->ndim() == b->ndim() && a->ndim() > 2){
     condition = a->shape()[a->ndim() - 1] != b->shape()[b->ndim() - 2];
     assert(!condition && "Matrix multiplication is not compatible");
     // take the first n - 2 dimensions of a and the last dimension of b
-    new_shape = shape_t(a->shape().begin(), a->shape().end() - 1);
+    shape_t new_shape = shape_t();
+
+    for(int i = 0; i < a->ndim() - 1; i++){
+      new_shape.push_back(a->shape()[i]);
+    }
     new_shape.push_back(b->shape()[b->ndim() - 1]);
-  }else if(b->size() == 1){
+
+    uint32_t batch_size = std::accumulate(new_shape.begin(), 
+                                          new_shape.end() - 2, 
+                                          1, std::multiplies<uint32_t>());
+
+    Tensor<T> out = Tensor<T>(new_shape);
+
+    uint32_t M = a->shape()[a->ndim() - 2];
+    uint32_t N = b->shape()[b->ndim() - 1];
+    uint32_t K = a->shape()[a->ndim() - 1];
+
+    #pragma omp parallel for
+    for(int i = 0; i < batch_size; i++){
+      gemm<T>(accessor<T>::const_ptr(*a) + i * M * K, 
+              accessor<T>::const_ptr(*b) + i * K * N, 
+              c == nullptr ? nullptr : accessor<T>::const_ptr(*c) + i * M * N,
+              accessor<T>::get(out) + i * M * N, 
+              M, N, K);
+    }
+
+    return out;
+
+  }else if(b->ndim() == 1 && a->ndim() > 1){
     // if b is 1 dimensional, then we are doing a dot product
     // check if the last dimension of two tensors are the same
     condition = a->shape()[a->ndim() - 1] != b->shape()[0];
     assert(!condition && "Matrix multiplication is not compatible");
+
+    shape_t new_shape = shape_t();
+    for(int i = 0; i < a->ndim() - 1; i++){
+      new_shape.push_back(a->shape()[i]);
+    }
+
+    Tensor<T> out = Tensor<T>(new_shape);
+    uint32_t batch_size = std::accumulate(new_shape.begin(), 
+                                          new_shape.end(), 
+                                          1, std::multiplies<uint32_t>());
+    
+    uint32_t ddot_size = a->shape()[a->ndim() - 1];
+    
+    #pragma omp parallel for
+    for(int i = 0; i < batch_size; i++){
+      dot<T>(accessor<T>::const_ptr(*a) + i * ddot_size, 
+            accessor<T>::const_ptr(*b), 
+            accessor<T>::get(out) + i, 
+            ddot_size);
+    } 
+
+    return out;
+  }
+  
+  // in other case, we have A ndim > B ndim and B ndim > 1
+  uint32_t M = a->shape()[a->ndim() - 2];
+  uint32_t N = b->shape()[b->ndim() - 1];
+  uint32_t K = a->shape()[a->ndim() - 1];
+
+  shape_t new_shape = shape_t();
+  for(int i = 0; i < a->ndim() - 1; i++){
+    new_shape.push_back(a->shape()[i]);
+  }
+  new_shape.push_back(b->shape()[b->ndim() - 1]);
+  Tensor<T> out = Tensor<T>(new_shape);
+  uint32_t batch_size = std::accumulate(new_shape.begin(), 
+                                        new_shape.end() - 2, 
+                                        1, std::multiplies<uint32_t>());
+
+  #pragma omp parallel for
+  for(int i = 0; i < batch_size; i++){
+    gemm<T>(accessor<T>::const_ptr(*a) + i * M * K, 
+            accessor<T>::const_ptr(*b), 
+            c == nullptr ? nullptr : accessor<T>::const_ptr(*c) + i * M * N,
+            accessor<T>::get(out) + i * M * N, 
+            M, N, K);
   }
 
-  // in other case, we have A ndim > B ndim
-
-
-
-
-  return Tensor<T>();
+  return out;
 }
 #endif

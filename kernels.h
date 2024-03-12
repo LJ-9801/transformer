@@ -1,5 +1,8 @@
 #pragma once
 #ifndef KERNELS_H
+#define KERNELS_H
+#include <cstdint>
+#include <cstddef>
 
 
 // @todo: needs to be optimized
@@ -14,21 +17,20 @@ void gemm(const T* a, const T* b, const T* c, T* d, int M, int N, int K)
       for(int k = 0; k < K; k++){
         sum += a[i * K + k] * b[k * N + j];
       }
-      if(c != nullptr)
-        d[i * N + j] = sum + c[i * N + j];
-      else
-        d[i * N + j] = sum;
+      d[i * N + j] = c != nullptr ? sum + c[i * N + j] : sum;
     }
   }
 }
 
 
+#include <cstddef>
+
 int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
-    int index = 0;
-    for (size_t i = 0; i < dim; ++i) {
-        index += indices[i] * strides[i];
-    }
-    return index;
+  int index = 0;
+  for (size_t i = 0; i < dim; ++i) {
+    index += indices[i] * strides[i];
+  }
+  return index;
 }
 
 // this function is used to expand a tensor
@@ -52,5 +54,13 @@ void expand_kernel(T* src, T* trg,
     int src_index = get_index(indices, src_stride, dim);
     trg[i] = src[src_index]; 
   }
+}
+
+template <typename T>
+void dot(const T* in1, const T* in2, T *output, const size_t size){
+  *output = 0;
+  for(int i = 0; i < size; i++){
+    *output += in1[i] * in2[i];
+  } 
 }
 #endif
