@@ -43,6 +43,7 @@ class Multiheadattention{
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
+
     auto k_tmp = k_linear.forward(key);
     auto q_tmp = q_linear.forward(query);
     auto v_tmp = v_linear.forward(value);
@@ -54,13 +55,13 @@ class Multiheadattention{
 
     k_tmp.transpose(-1, -2);
 
-    auto product = batch_matmul<float>(&q_tmp, &k_tmp);
+    auto product = batch_matmul<float>(q_tmp, k_tmp);
 
     product /= sqrt(_single_head_dim);
 
-    auto scores = softmax<float>(&product, -1);
+    auto scores = softmax<float>(product, -1);
 
-    scores = batch_matmul<float>(&scores, &v_tmp);
+    scores = batch_matmul<float>(scores, v_tmp);
 
     scores.transpose(1, 2);
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});

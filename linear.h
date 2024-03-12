@@ -37,9 +37,9 @@ class Linear{
       shape.push_back(input.shape()[i]);
     }
     shape.push_back(this->_out_features);
+
     Tensor<float> out = Tensor<float>(shape);
-    uint32_t batch_size = std::accumulate(shape.begin(), 
-                          shape.end() - 2, 1, std::multiplies<uint32_t>());
+    uint32_t batch_size = multiply_accumulate(shape.begin(), shape.end() - 2);
     uint32_t slices = out.size() / batch_size;
 
     uint32_t M = input.shape()[input.ndim() - 2];

@@ -216,6 +216,7 @@ struct Tensor
 
     private:
 
+    // TODO: tile and parallize memcpy
     void copy(const T* data){
       #pragma omp parallel for
       for(int i = 0; i < _size; i++){

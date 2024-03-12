@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <iostream>
 
+#define multiply_accumulate(begin, end) \
+      std::accumulate(begin, end, 1, std::multiplies<uint32_t>())
 
 // @todo: needs to be optimized
 template <typename T>
