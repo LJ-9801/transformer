@@ -4,18 +4,24 @@
 
 int main(){
 
-  Tensor<float> src = Tensor<float>({3, 4, 4});
-  src.arange();
+  Tensor<float> key = Tensor<float>({3, 2, 4});
+  Tensor<float> value = Tensor<float>({3, 2, 4});
+  Tensor<float> query = Tensor<float>({3, 2, 4});
 
-  Tensor<float> trg_exp = Tensor<float>({4, 4});
-  trg_exp.arange();
+  key.fill_one();
+  value.fill_one();
+  query.fill_one();
 
-  Tensor<float> out = batch_matmul<float>(&src, &trg_exp, nullptr);
+  Multiheadattention mha(4, 2);
+
+  mha.generate_weights();
+
+  Tensor<float> out = mha.forward(key, query, value);
 
   for(int i = 0; i < out.size(); i++){
-    std::cout << out.data()[i] << " ";
+    cout << out.data()[i] << " ";
   }
-  std::cout << std::endl;
+  cout << endl;
 
   return 0;
 }

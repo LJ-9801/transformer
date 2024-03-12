@@ -38,19 +38,14 @@ class Multiheadattention{
     uint32_t seq_len = key.shape()[1];
     uint32_t seq_length_query = query.shape()[1];
 
-    cout << "batch_size: " << batch_size << endl;
-    cout << "seq_len: " << seq_len << endl;
-    cout << "n_heads: " << _n_heads << endl;
-    cout << "single_head_dim: " << _single_head_dim << endl;
-
     key.view({batch_size, seq_len, _n_heads, _single_head_dim});
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
     // this is parallelizable
-    auto k_tmp = batch_matmul<float>(&key, &this->k, nullptr);
-    auto q_tmp = batch_matmul<float>(&query, &this->q, nullptr);
-    auto v_tmp = batch_matmul<float>(&value, &this->v, nullptr);
+    Tensor<float> k_tmp = batch_matmul<float>(&key, &this->k, nullptr);
+    Tensor<float> q_tmp = batch_matmul<float>(&query, &this->q, nullptr);
+    Tensor<float> v_tmp = batch_matmul<float>(&value, &this->v, nullptr);
 
     // this is parallelizable
     k_tmp.transpose(1, 2);
@@ -60,11 +55,11 @@ class Multiheadattention{
     k_tmp.transpose(-1, -2);
 
     cout << "product" << endl;
-    auto product = batch_matmul<float>(&q_tmp, &k_tmp, nullptr);
+    Tensor<float> product = batch_matmul<float>(&q_tmp, &k_tmp, nullptr);
 
     product /= sqrt(_single_head_dim);
 
-    auto scores = softmax<float>(&product, -1);
+    Tensor<float> scores = softmax<float>(&product, -1);
 
     cout << "scores" << endl;
     scores = batch_matmul<float>(&scores, &v_tmp, nullptr);
@@ -74,7 +69,7 @@ class Multiheadattention{
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});
     
     cout << "output" << endl;
-    auto output = batch_matmul<float>(&scores, &this->out_weight, &this->out_bias);
+    Tensor<float> output = batch_matmul<float>(&scores, &this->out_weight, &this->out_bias);
 
     return output;
   }

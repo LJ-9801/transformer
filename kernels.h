@@ -59,6 +59,7 @@ void expand_kernel(T* src, T* trg,
 template <typename T>
 void dot(const T* in1, const T* in2, T *output, const size_t size){
   *output = 0;
+  #pragma unroll
   for(int i = 0; i < size; i++){
     *output += in1[i] * in2[i];
   } 
