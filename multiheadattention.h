@@ -43,9 +43,9 @@ class Multiheadattention{
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
     // this is parallelizable
-    Tensor<float> k_tmp = batch_matmul<float>(&key, &this->k, nullptr);
-    Tensor<float> q_tmp = batch_matmul<float>(&query, &this->q, nullptr);
-    Tensor<float> v_tmp = batch_matmul<float>(&value, &this->v, nullptr);
+    Tensor<float> k_tmp = batch_matmul<float>(&key, &this->k);
+    Tensor<float> q_tmp = batch_matmul<float>(&query, &this->q);
+    Tensor<float> v_tmp = batch_matmul<float>(&value, &this->v);
 
     // this is parallelizable
     k_tmp.transpose(1, 2);
@@ -54,22 +54,20 @@ class Multiheadattention{
 
     k_tmp.transpose(-1, -2);
 
-    cout << "product" << endl;
-    Tensor<float> product = batch_matmul<float>(&q_tmp, &k_tmp, nullptr);
+    Tensor<float> product = batch_matmul<float>(&q_tmp, &k_tmp);
 
     product /= sqrt(_single_head_dim);
 
     Tensor<float> scores = softmax<float>(&product, -1);
 
-    cout << "scores" << endl;
-    scores = batch_matmul<float>(&scores, &v_tmp, nullptr);
+    scores = batch_matmul<float>(&scores, &v_tmp);
 
     scores.transpose(1, 2);
 
     scores.view({batch_size, seq_length_query, _n_heads * _single_head_dim});
     
-    cout << "output" << endl;
-    Tensor<float> output = batch_matmul<float>(&scores, &this->out_weight, &this->out_bias);
+
+    Tensor<float> output = batch_matmul<float>(&scores, &this->out_weight);
 
     return output;
   }

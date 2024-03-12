@@ -7,7 +7,7 @@
 
 // @todo: needs to be optimized
 template <typename T>
-void gemm(const T* a, const T* b, const T* c, T* d, int M, int N, int K)
+void gemm(const T* a, const T* b, T* d, int M, int N, int K)
 {
   #pragma omp parallel for
   for(int i = 0; i < M; i++){
@@ -17,7 +17,7 @@ void gemm(const T* a, const T* b, const T* c, T* d, int M, int N, int K)
       for(int k = 0; k < K; k++){
         sum += a[i * K + k] * b[k * N + j];
       }
-      d[i * N + j] = c != nullptr ? sum + c[i * N + j] : sum;
+      d[i * N + j] = sum; 
     }
   }
 }

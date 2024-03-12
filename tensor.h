@@ -157,7 +157,7 @@ struct Tensor
       this->_shape = new_shape;
     }
 
-    Tensor<T>& operator/=(const uint32_t& scalar){
+    Tensor<T>& operator/=(const T& scalar){
         if(this->empty()){
             return *this;
         }
@@ -244,6 +244,18 @@ stride_t calculate_stride(const shape_t& shape){
     stride[i] = stride[i + 1] * shape[i + 1];
   }
   return stride;
+}
+
+std::ostream& operator<<(std::ostream& os, const shape_t& shape){
+  os << "[";
+  for(int i = 0; i < shape.size(); i++){
+    os << shape[i];
+    if(i != shape.size() - 1){
+      os << ", ";
+    }
+  }
+  os << "]";
+  return os;
 }
 #endif
 

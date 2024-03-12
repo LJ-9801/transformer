@@ -98,7 +98,7 @@ Tensor<T> expand(Tensor<T>* src, shape_t new_shape)
 
 
 template <typename T>
-Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* c)
+Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b)
 {
   if(a->empty() || b->empty()){
     return Tensor<T>();
@@ -111,7 +111,8 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
   bool condition = false;
   //shape_t new_shape = shape_t();
 
-  if(a->ndim() == b->ndim() && a->ndim() > 2){
+  if(a->ndim() == b->ndim() && a->ndim() > 1){
+
     condition = a->shape()[a->ndim() - 1] != b->shape()[b->ndim() - 2];
     assert(!condition && "Matrix multiplication is not compatible");
     // take the first n - 2 dimensions of a and the last dimension of b
@@ -136,7 +137,6 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
     for(int i = 0; i < batch_size; i++){
       gemm<T>(accessor<T>::const_ptr(*a) + i * M * K, 
               accessor<T>::const_ptr(*b) + i * K * N, 
-              c == nullptr ? nullptr : accessor<T>::const_ptr(*c) + i * M * N,
               accessor<T>::get(out) + i * M * N, 
               M, N, K);
     }
@@ -191,7 +191,6 @@ Tensor<T> batch_matmul(const Tensor<T>* a, const Tensor<T>* b, const Tensor<T>* 
   for(int i = 0; i < batch_size; i++){
     gemm<T>(accessor<T>::const_ptr(*a) + i * M * K, 
             accessor<T>::const_ptr(*b), 
-            c == nullptr ? nullptr : accessor<T>::const_ptr(*c) + i * M * N,
             accessor<T>::get(out) + i * M * N, 
             M, N, K);
   }
