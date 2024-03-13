@@ -15,7 +15,10 @@ class LayerNorm{
                                            normalized_shape.end())),
             _eps(eps),
             _affine(elementwise_affine),
-            _isbias(bias) {}
+            _isbias(bias) 
+  {
+    this->generate_weight();
+  }
 
   void generate_weight(){
     this->_weight = _affine ? 
@@ -29,17 +32,29 @@ class LayerNorm{
   }
 
   Tensor<float> forward(Tensor<float> input){
+
     uint32_t n_batches = input.size() / _norm_size;
 
     Tensor<float> output = Tensor<float>(input.shape());
 
+    #pragma omp parallel for
     for(unsigned int i = 0; i < n_batches; i++){
       
       float m = mean(i, input.data());
       float v = var(i, input.data(), m);
-
+      
+      #pragma unroll
       for(unsigned int j = 0; j < _norm_size; j++){
-        uint32_t idx = j % _normalized_shape.back();
+        uint32_t pos[_normalized_shape.size()];
+
+        for(unsigned int k = 0; k < _normalized_shape.size(); k++){
+          pos[k] = (j / multiply_accumulate(
+                           _normalized_shape.begin(),
+                           _normalized_shape.begin() + k)) % _normalized_shape[k];
+        }
+
+        int idx = get_index_from_shape(pos, _normalized_shape.data(), _normalized_shape.size());
+
         float* out_ptr = accessor<float>::get(output);
         float* in_ptr = accessor<float>::const_ptr(input); 
         float* w_ptr = accessor<float>::const_ptr(_weight);
@@ -58,7 +73,8 @@ class LayerNorm{
 
   float mean(uint32_t i, float* input){
     float mean = 0;
-    for(unsigned int j = 0; i < _norm_size; j++){
+    #pragma unroll
+    for(unsigned int j = 0; j < _norm_size; j++){
       mean += input[i * _norm_size + j];
     }
     mean /= this->_norm_size;
@@ -67,6 +83,7 @@ class LayerNorm{
 
   float var(uint32_t i, float* input, float m){
     float variance = 0;
+    #pragma unroll
     for(unsigned int j = 0; j < _norm_size; j++){
       variance += pow(input[i * _norm_size + j] - m, 2);
     }

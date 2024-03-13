@@ -14,9 +14,12 @@ int main(){
   mha.generate_weights();
 
   auto out = mha.forward(key, query, value);
-  
+
+  LayerNorm norm({1 , 6});
+  auto out2 = norm.forward(key);
+
   for(int i = 0; i < out.size(); i++){
-    std::cout << out[i] << " ";
+    std::cout << out2[i] << " ";
   }
   std::cout << std::endl;
 

@@ -52,6 +52,16 @@ int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
   return index;
 }
 
+int get_index_from_shape(uint32_t* indices, uint32_t* shape, uint32_t dim){
+  int index = 0;
+  int stride = 1;
+  for (int i = dim - 1; i >= 0; --i) {
+      index += indices[i] * stride;
+      stride *= shape[i];
+  }
+  return index;
+}
+
 // this function is used to expand a tensor
 // for example there is a tensor with shape [32, 1, 512]
 // and we want to expand it to [32, 10, 512]
