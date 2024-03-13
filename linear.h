@@ -54,6 +54,7 @@ class Linear{
               accessor<float>::get(out) + i * M * N, 
               M, N, K);
 
+      // @todo: this could be fused into the gemm_nt?
       if(this->_isbias){
         #pragma unrroll 
         for(int j = 0; j < slices; j++){
