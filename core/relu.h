@@ -1,6 +1,6 @@
 #ifndef RELU_H
 #define RELU_H
-#include "kernels.h"
+#include "common/kernels.h"
 #include "tensor.h"
 
 class ReLU{

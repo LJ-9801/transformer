@@ -7,7 +7,7 @@
 #include <iostream>
 #include <memory>
 
-#include "kernels.h"
+#include "common/kernels.h"
 
 using namespace std;
 
@@ -99,24 +99,14 @@ struct Tensor
     // TODO this is so inefficient as we are using
     // vector to store intermediate indexes
     void transpose(int16_t axis1, int16_t axis2){ 
-      if(this->empty()){
-        return;
-      }
+      if(this->empty()) return;
 
-      if(axis1 < 0){
-        axis1 = this->_shape.size() + axis1;
-      }
-
-      if(axis2 < 0){
-        axis2 = this->_shape.size() + axis2;
-      }
+      if(axis1 < 0) axis1 = this->_shape.size() + axis1;
+      if(axis2 < 0) axis2 = this->_shape.size() + axis2;
 
       shape_t new_shape = this->_shape;
       std::swap(new_shape[axis1], new_shape[axis2]);
-
-      // calculate stride
       stride_t new_stride = calculate_stride(new_shape);
-
       T* new_data = this->alloc(this->size()); 
 
       tranpose_tensor(this->_data, &new_data, 

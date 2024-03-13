@@ -2,7 +2,7 @@
 #define OPERATIONS_H
 #include <numeric>
 #include <cmath>
-#include "kernels.h"
+#include "common/kernels.h"
 #include "tensor.h"
 
 
@@ -77,15 +77,13 @@ Tensor<T> expand(const Tensor<T>& src, shape_t new_shape)
   uint32_t src_size = src.size();
   uint32_t trg_size = trg.size();
 
-  uint32_t dim = src.shape().size();
-
   T* src_ptr = accessor<T>::const_ptr(src);
   T* trg_ptr = accessor<T>::get(trg);
 
   #pragma omp parallel for
   for (int i = 0; i < trg_size; ++i) {
     int src_index = 0;
-    for(int j = 0; j < dim; j++){
+    for(int j = 0; j < src.ndim(); j++){
       int idx = (i / trg.stride()[j]) % src.shape()[j];
       src_index += idx * src.stride()[j];
     }
@@ -95,7 +93,7 @@ Tensor<T> expand(const Tensor<T>& src, shape_t new_shape)
   return trg;
 }
 
-
+// there's gotta be a better way to check batch_matmul compatibility
 template <typename T>
 Tensor<T> batch_matmul(const Tensor<T>& a, const Tensor<T>& b)
 {
@@ -114,9 +112,7 @@ Tensor<T> batch_matmul(const Tensor<T>& a, const Tensor<T>& b)
 
     condition = a.shape()[a.ndim() - 1] != b.shape()[b.ndim() - 2];
     assert(!condition && "Matrix multiplication is not compatible");
-    // take the first n - 2 dimensions of a and the last dimension of b
     shape_t new_shape = shape_t();
-
     for(int i = 0; i < a.ndim() - 1; i++){
       new_shape.push_back(a.shape()[i]);
     }

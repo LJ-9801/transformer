@@ -1,6 +1,6 @@
 #ifndef LAYERNORM_H
 #define LAYERNORM_H
-#include "kernels.h"
+#include "common/kernels.h"
 #include "tensor.h"
 
 class LayerNorm{
@@ -53,16 +53,14 @@ class LayerNorm{
                            _normalized_shape.begin() + k)) % _normalized_shape[k];
         }
 
-        int idx = get_index_from_shape(pos, _normalized_shape.data(), _normalized_shape.size());
+        int idx = index_from_shape(pos, _normalized_shape.data(), 
+                                            _normalized_shape.size());
 
         float* out_ptr = accessor<float>::get(output);
-        float* in_ptr = accessor<float>::const_ptr(input); 
-        float* w_ptr = accessor<float>::const_ptr(_weight);
-        float* b_ptr = accessor<float>::const_ptr(_bias); 
         
         out_ptr[i * _norm_size + j] = 
-          w_ptr[idx] * (in_ptr[i * _norm_size + j] - m) /
-          std::sqrt(v + _eps) + b_ptr[idx];
+          _weight[idx] * (input[i * _norm_size + j] - m) /
+          std::sqrt(v + _eps) + _bias[idx];
       }
     }
     return output;

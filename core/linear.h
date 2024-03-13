@@ -1,6 +1,6 @@
 #ifndef LINEAR_H
 #define LINEAR_H
-#include "operations.h"
+#include "common/kernels.h"
 
 class Linear{
   public:

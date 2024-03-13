@@ -1,8 +1,8 @@
 #ifndef MULTIHEADATTENTION_H
 #define MULTIHEADATTENTION_H
 
-#include "operations.h"
-#include "linear.h"
+#include "core/operations.h"
+#include "core/linear.h"
 
 
 class Multiheadattention{

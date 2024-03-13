@@ -44,7 +44,7 @@ void gemm_nt(const T* a, const T* b, T* d, int M, int N, int K)
   }
 }
 
-int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
+static inline int index_from_stride(uint32_t* indices, uint32_t* strides, uint32_t dim) {
   int index = 0;
   for (size_t i = 0; i < dim; ++i) {
     index += indices[i] * strides[i];
@@ -52,7 +52,7 @@ int get_index(uint32_t* indices, uint32_t* strides, uint32_t dim) {
   return index;
 }
 
-int get_index_from_shape(uint32_t* indices, uint32_t* shape, uint32_t dim){
+static inline int index_from_shape(uint32_t* indices, uint32_t* shape, uint32_t dim){
   int index = 0;
   int stride = 1;
   for (int i = dim - 1; i >= 0; --i) {
@@ -80,10 +80,12 @@ void expand_kernel(T* src, T* trg,
       indices[j] = index / trg_stride[j];
       index = index % trg_stride[j];
     }
-    int src_index = get_index(indices, src_stride, dim);
+    int src_index = index_from_stride(indices, src_stride, dim);
     trg[i] = src[src_index]; 
   }
 }
+
+
 template <typename T>
 void dot(const T* in1, const T* in2, T *output, const size_t size){
   *output = 0;
