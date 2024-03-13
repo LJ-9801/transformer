@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <iostream>
+#include <cmath>
 
 #define multiply_accumulate(begin, end) \
       std::accumulate(begin, end, 1, std::multiplies<uint32_t>())
