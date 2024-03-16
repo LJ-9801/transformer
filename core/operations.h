@@ -1,72 +1,8 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
-#include <numeric>
 #include <cmath>
 #include "common/kernels.h"
 #include "tensor.h"
-
-
-
-int getIndex(const std::vector<uint32_t>& indices, const std::vector<uint32_t>& strides) {
-    int index = 0;
-    for (size_t i = 0; i < indices.size(); ++i) {
-        index += indices[i] * strides[i];
-    }
-    return index;
-}
-
-
-template <typename T>
-Tensor<T> softmax(const Tensor<T>& t, int axis)
-{ 
-  if(t.empty()){
-    return Tensor<T>();
-  }
-
-  if(axis < 0){
-    axis = t.ndim() + axis;
-  }
-
-  Tensor<T> out = Tensor<T>(t.shape());
-
-  int dimSize = t.shape()[axis];
-  int innerStride = 1;
-  for (int i = axis + 1; i < t.ndim(); ++i) {
-      innerStride *= t.shape()[i];
-  }
-  int outerStride = innerStride * dimSize;
-
-  #pragma omp parallel for
-  for (int outer = 0; outer < t.size() / outerStride; ++outer) {
-      #pragma unroll
-      for (int inner = 0; inner < innerStride; ++inner) {
-          T* out_ptr = accessor<T>::get(out);
-          T* t_ptr = accessor<T>::const_ptr(t);
-          // Find the maximum value for numerical stability
-          T maxVal = -std::numeric_limits<double>::infinity();
-          for (int i = 0; i < dimSize; ++i) {
-              int index = outer * outerStride + i * innerStride + inner;
-              maxVal = std::max(maxVal, t_ptr[index]); 
-          }
-
-          // Compute the sum of exponentials
-          T sumExp = 0.0;
-          for (int i = 0; i < dimSize; ++i) {
-              int index = outer * outerStride + i * innerStride + inner;
-              out_ptr[index] = std::exp(t_ptr[index] - maxVal); // Subtract maxVal for numerical stability
-              sumExp += out_ptr[index];
-          }
-
-          // Normalize to get the softmax probabilities
-          for (int i = 0; i < dimSize; ++i) {
-              int index = outer * outerStride + i * innerStride + inner;
-              out_ptr[index] /= sumExp;
-          }
-      }
-  }
-
-  return out; 
-}
 
 
 template <typename T>

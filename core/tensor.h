@@ -134,6 +134,45 @@ struct Tensor
         return *this;
     }
 
+    Tensor<T> operator+(const Tensor<T>& other){
+        if(this->empty() || other.empty()){
+            return Tensor<T>();
+        }
+
+        // TODO: this needs to check broadcasting rules
+        assert(this->shape() == other.shape() && "The two tensors must have the same shape");
+        Tensor<T> out = Tensor<T>(this->shape());
+        #pragma omp parallel for
+        for(int i = 0; i < _size; i++){
+            out._data[i] = this->_data[i] + other._data[i];
+        }
+
+        return out;
+    }
+
+    Tensor<T> operator-(const T& scalar){
+        if(this->empty()){
+            return *this;
+        }
+
+        Tensor<T> out = Tensor<T>(*this);
+        out -= scalar;
+        return out;
+    }
+
+    Tensor<T>& operator-=(const T& scalar){
+        if(this->empty()){
+            return *this;
+        }
+
+        #pragma omp parallel for
+        for(int i = 0; i < _size; i++){
+            this->_data[i] -= scalar;
+        }
+
+        return *this;
+    }
+
 
     Tensor<T>& operator=(const Tensor<T>& other){
       if(this == &other){

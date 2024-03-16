@@ -1,10 +1,9 @@
 #pragma once
 #ifndef KERNELS_H
 #define KERNELS_H
-#include <cstdint>
-#include <cstddef>
 #include <iostream>
 #include <cmath>
+#include "utilities.h"
 
 #define multiply_accumulate(begin, end) \
       std::accumulate(begin, end, 1, std::multiplies<uint32_t>())
@@ -44,23 +43,6 @@ void gemm_nt(const T* a, const T* b, T* d, int M, int N, int K)
   }
 }
 
-static inline int index_from_stride(uint32_t* indices, uint32_t* strides, uint32_t dim) {
-  int index = 0;
-  for (size_t i = 0; i < dim; ++i) {
-    index += indices[i] * strides[i];
-  }
-  return index;
-}
-
-static inline int index_from_shape(uint32_t* indices, uint32_t* shape, uint32_t dim){
-  int index = 0;
-  int stride = 1;
-  for (int i = dim - 1; i >= 0; --i) {
-      index += indices[i] * stride;
-      stride *= shape[i];
-  }
-  return index;
-}
 
 // this function is used to expand a tensor
 // for example there is a tensor with shape [32, 1, 512]

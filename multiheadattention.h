@@ -3,7 +3,7 @@
 
 #include "core/operations.h"
 #include "core/linear.h"
-
+#include "core/activations.h"
 
 class Multiheadattention{
   public:
@@ -15,7 +15,11 @@ class Multiheadattention{
     q_linear(_single_head_dim, _single_head_dim, false),
     k_linear(_single_head_dim, _single_head_dim, false),
     v_linear(_single_head_dim, _single_head_dim, false),
-    out_linear(_n_heads*_single_head_dim, _embed_dim) {}
+    out_linear(_n_heads*_single_head_dim, _embed_dim) {
+      if(embed_dim < n_heads){
+        throw std::invalid_argument("embed_dim should be greater than n_heads");
+      }
+    }
 
   void generate_weights(){
 
@@ -39,8 +43,12 @@ class Multiheadattention{
     uint32_t seq_len = key.shape()[1];
     uint32_t seq_length_query = query.shape()[1];
 
+
+    cout << batch_size << " " << seq_len << " " << _n_heads << " " << _single_head_dim << endl; 
     key.view({batch_size, seq_len, _n_heads, _single_head_dim});
+    cout << batch_size << " " << seq_length_query << " " << _n_heads << " " << _single_head_dim << endl;
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
+    cout << batch_size << " " << seq_len << " " << _n_heads << " " << _single_head_dim << endl;
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
     auto k_tmp = k_linear.forward(key);

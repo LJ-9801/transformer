@@ -1,24 +1,19 @@
 #include "multiheadattention.h"
 #include "core/layernorm.h"
-
-
+#include "core/linear.h"
+#include "transformerblock.h"
 
 int main(){
 
-  auto key = Tensor<float>({4, 1, 6}).arange();
-  auto value = Tensor<float>({4, 1, 6}).arange();
-  auto query = Tensor<float>({4, 1, 6}).arange();
+  auto key = Tensor<float>({4, 2, 4}).arange();
+  auto value = Tensor<float>({4, 2, 4}).arange();
+  auto query = Tensor<float>({4, 2, 4}).arange();
 
-  Multiheadattention mha(6, 2);
-  LayerNorm norm({1 , 6});
-  Linear lin(6, 6);
-
-  mha.generate_weights();
-  lin.generate_weights();
+  auto tmp = key - 10; 
   
-  auto out = mha.forward(key, query, value);
-  auto out2 = norm.forward(key);
-  auto out3 = lin.forward(key);
+  auto tb = transformerblock(4, 2, 4);
+
+  auto out = tb.forward(key, query, value); 
 
   return 0;
 }
