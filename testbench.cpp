@@ -17,6 +17,8 @@ int main(){
   
   auto tb = transformerblock(64, 4, 8);
 
+  tb.generate_weights();
+
     auto start = std::chrono::high_resolution_clock::now();
     auto out = tb.forward(key, query, value);
     auto end = std::chrono::high_resolution_clock::now();

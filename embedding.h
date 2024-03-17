@@ -12,6 +12,9 @@ class Embedding
       _embedding = Tensor<float>({vocab_size, d_model});
     }
 
+    void generate_weights(){
+    }
+
   Tensor<float> forward(Tensor<uint32_t> x) {
     Tensor<float> out = Tensor<float>({x.shape()[0], x.shape()[1], _d_model});
 
