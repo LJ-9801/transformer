@@ -4,6 +4,7 @@
 #include "core/layernorm.h"
 #include "core/linear.h"
 #include "transformerblock.h"
+#include "positionalEmbedding.h"
 
 int main(){
 
