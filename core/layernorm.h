@@ -50,11 +50,12 @@ class LayerNorm{
         for(unsigned int k = 0; k < _normalized_shape.size(); k++){
           pos[k] = (j / multiply_accumulate(
                            _normalized_shape.begin(),
-                           _normalized_shape.begin() + k)) % _normalized_shape[k];
+                           _normalized_shape.begin() + k)) % 
+                           _normalized_shape[k];
         }
 
         int idx = index_from_shape(pos, _normalized_shape.data(), 
-                                            _normalized_shape.size());
+                                        _normalized_shape.size());
 
         float* out_ptr = accessor<float>::get(output);
         

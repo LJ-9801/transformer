@@ -12,9 +12,9 @@ class Multiheadattention{
     _embed_dim(embed_dim), 
     _n_heads(n_heads), 
     _single_head_dim(embed_dim / n_heads),
-    q_linear(_single_head_dim, _single_head_dim, false),
-    k_linear(_single_head_dim, _single_head_dim, false),
-    v_linear(_single_head_dim, _single_head_dim, false),
+    q_linear(_single_head_dim, _single_head_dim),
+    k_linear(_single_head_dim, _single_head_dim),
+    v_linear(_single_head_dim, _single_head_dim),
     out_linear(_n_heads*_single_head_dim, _embed_dim) {
       if(embed_dim < n_heads){
         throw std::invalid_argument("embed_dim should be greater than n_heads");
@@ -44,11 +44,8 @@ class Multiheadattention{
     uint32_t seq_length_query = query.shape()[1];
 
 
-    cout << batch_size << " " << seq_len << " " << _n_heads << " " << _single_head_dim << endl; 
     key.view({batch_size, seq_len, _n_heads, _single_head_dim});
-    cout << batch_size << " " << seq_length_query << " " << _n_heads << " " << _single_head_dim << endl;
     query.view({batch_size, seq_length_query, _n_heads, _single_head_dim});
-    cout << batch_size << " " << seq_len << " " << _n_heads << " " << _single_head_dim << endl;
     value.view({batch_size, seq_len, _n_heads, _single_head_dim});
 
     auto k_tmp = k_linear.forward(key);
@@ -84,9 +81,9 @@ class Multiheadattention{
   uint32_t _n_heads;
   uint32_t _single_head_dim;
 
-  Linear q_linear;
-  Linear k_linear;
-  Linear v_linear;
-  Linear out_linear;
+  Linear<false> q_linear;
+  Linear<false> k_linear;
+  Linear<false> v_linear;
+  Linear<true> out_linear;
 };
 #endif

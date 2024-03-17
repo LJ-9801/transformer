@@ -2,32 +2,34 @@
 #define LINEAR_H
 #include "common/kernels.h"
 
+template <bool IsBias>
 class Linear{
   public:
-  Linear(uint32_t in_features, uint32_t out_features, bool bias = true):
+  Linear(uint32_t in_features, uint32_t out_features):
     _in_features(in_features), 
     _out_features(out_features), 
-    _isbias(bias), 
     _weight(Tensor<float>({out_features, in_features})),
-    _bias(_isbias ? Tensor<float>({out_features}) : Tensor<float>()) 
+    _bias(IsBias ? Tensor<float>({out_features}) : Tensor<float>()) 
     {
       this->generate_weights();
     }
 
   void generate_weights(){
     this->_weight = this->_weight.fill_one();
-    if(this->_isbias){
+    if(IsBias){
       this->_bias = this->_bias.fill_one();
     } 
   }
 
   void load_weights(Tensor<float> weight, Tensor<float> bias){
     this->_weight = weight;
-    this->_bias = bias;
+    if(IsBias){
+      this->_bias = bias;
+    } 
   }
 
   bool isbias() const {
-    return this->_isbias;
+    return IsBias;
   }
 
   Tensor<float> forward(Tensor<float>& input){
@@ -48,13 +50,24 @@ class Linear{
 
     #pragma omp parallel for
     for(int i = 0; i < batch_size; i++){
+      
       gemm_nt<float>(
               accessor<float>::const_ptr(input) + i * M * K, 
-              accessor<float>::const_ptr(this->_weight), 
+              accessor<float>::const_ptr(this->_weight),
+              IsBias ? nullptr : accessor<float>::const_ptr(this->_bias),
               accessor<float>::get(out) + i * M * N, 
               M, N, K);
 
+     /*
+      float bias_value = accessor<float>::get(this->_bias) == nullptr ? 0 : accessor<float>::get(this->_bias)[i * slices];
+      cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, M, N, K, 1.0, 
+                  accessor<float>::const_ptr(input) + i * M * K, K, 
+                  accessor<float>::const_ptr(this->_weight), K, 
+                  bias_value,  
+                  accessor<float>::get(out) + i * M * N, N);
+      */
       // @todo: this could be fused into the gemm_nt?
+      /*
       if(this->_isbias){
         #pragma unrroll 
         for(int j = 0; j < slices; j++){
@@ -63,6 +76,7 @@ class Linear{
           *out_ptr += *bias_ptr; 
         }
       }
+      */
     }
                                          
     return out;

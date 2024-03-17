@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <iostream>
 #include <memory>
+#include <array>
 
 #include "common/kernels.h"
 
@@ -140,8 +141,11 @@ struct Tensor
         }
 
         // TODO: this needs to check broadcasting rules
-        assert(this->shape() == other.shape() && "The two tensors must have the same shape");
+        if(this->shape() != other.shape()){
+            throw runtime_error("The two tensors must have the same shape");
+        }
         Tensor<T> out = Tensor<T>(this->shape());
+        
         #pragma omp parallel for
         for(int i = 0; i < _size; i++){
             out._data[i] = this->_data[i] + other._data[i];
@@ -158,6 +162,19 @@ struct Tensor
         Tensor<T> out = Tensor<T>(*this);
         out -= scalar;
         return out;
+    }
+
+    Tensor<T>& operator*= (const T& scalar){
+        if(this->empty()){
+            return *this;
+        }
+
+        #pragma omp parallel for
+        for(int i = 0; i < _size; i++){
+            this->_data[i] *= scalar;
+        }
+
+        return *this;
     }
 
     Tensor<T>& operator-=(const T& scalar){
@@ -200,6 +217,11 @@ struct Tensor
 
     T operator[](uint64_t index) const {
         return this->_data[index];
+    }
+
+    T& at(const shape_t& index){
+        uint32_t idx = index_from_shape(index.data(), this->_shape.data(), this->ndim());
+        return this->_data[idx];
     }
 
     Tensor<T>& fill_one(){
