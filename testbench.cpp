@@ -5,6 +5,7 @@
 #include "core/linear.h"
 #include "transformerblock.h"
 #include "positionalEmbedding.h"
+#include "embedding.h"
 
 int main(){
 

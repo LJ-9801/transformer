@@ -38,7 +38,7 @@ class Multiheadattention{
     this->v_linear.load_weights(v.first, v.second);
   }
 
-  Tensor<float> forward(Tensor<float> key, Tensor<float> query, Tensor<float> value){
+  Tensor<float> forward(Tensor<float> key, Tensor<float> query, Tensor<float> value, Tensor<float> mask = Tensor<float>()){
     uint32_t batch_size = key.shape()[0];
     uint32_t seq_len = key.shape()[1];
     uint32_t seq_length_query = query.shape()[1];
@@ -60,6 +60,10 @@ class Multiheadattention{
     k_tmp.transpose(-1, -2);
 
     auto product = batch_matmul<float>(q_tmp, k_tmp);
+
+    if(!mask.empty()){
+      product = masked_fill<float>(product, mask==(float)0.0, -1e20);
+    }
 
     product /= sqrt(_single_head_dim);
 

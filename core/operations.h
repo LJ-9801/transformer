@@ -119,4 +119,27 @@ Tensor<T> batch_matmul(const Tensor<T>& a, const Tensor<T>& b)
 
   return out;
 }
+
+template <typename T>
+Tensor<T> masked_fill(const Tensor<T>& src, const Tensor<bool>& mask, T value)
+{
+  if(src.empty() || mask.empty()){
+    return Tensor<T>();
+  }
+
+  assert(src.shape() == mask.shape() && "The shape of the mask should be the same as the source tensor");
+
+  Tensor<T> trg = Tensor<T>(src.shape()); 
+  uint32_t src_size = src.size();
+
+  #pragma omp parallel for
+  for (int i = 0; i < src_size; ++i) {
+    T* src_ptr = accessor<T>::const_ptr(src);
+    T* trg_ptr = accessor<T>::get(trg);
+    bool* mask_ptr = accessor<bool>::const_ptr(mask);
+    trg_ptr[i] = mask_ptr[i] ? value : src_ptr[i];
+  } 
+
+  return trg;
+}
 #endif

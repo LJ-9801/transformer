@@ -17,10 +17,10 @@ using namespace std;
 typedef vector<uint32_t> shape_t;
 typedef vector<uint32_t> stride_t;
 
-static inline stride_t calculate_stride(const shape_t& shape);
-
 template <typename T>
 struct accessor;
+
+static inline stride_t calculate_stride(const shape_t& shape);
 
 template <typename T>
 struct Tensor
@@ -272,6 +272,7 @@ struct Tensor
     size_t _size;
 };
 
+
 // accessor for tensor
 template <typename T>
 struct accessor {
@@ -279,12 +280,32 @@ struct accessor {
   static T* get(Tensor<T>& t) { return t._data;}
 };
 
+
 static inline stride_t calculate_stride(const shape_t& shape){
   stride_t stride(shape.size(), 1);
   for(int i = shape.size() - 2; i >= 0; i--){
     stride[i] = stride[i + 1] * shape[i + 1];
   }
   return stride;
+}
+
+
+template <typename T>
+Tensor<bool> operator==(const Tensor<T>& a, const T& scalar){
+  if(a.empty()){
+    return Tensor<bool>();
+  }
+
+  T tol = 1e-5;
+
+  Tensor<bool> out = Tensor<bool>(a.shape());
+  #pragma omp parallel for
+  for(int i = 0; i < a.size(); i++){
+    bool* ptr = accessor<bool>::get(out);
+    ptr[i] = abs(a[i] - scalar) < tol; 
+  }
+
+  return out;
 }
 
 std::ostream& operator<<(std::ostream& os, const shape_t& shape){

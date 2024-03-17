@@ -15,6 +15,15 @@ class transformerblock
       _linear1(embed_dim, embed_dim * expansion_factor),
       _linear2(embed_dim * expansion_factor, embed_dim){}
 
+
+    void generate_weights(){
+      _mattention.generate_weights();
+      _linear1.generate_weights();
+      _linear2.generate_weights();
+      _norm1.generate_weights();
+      _norm2.generate_weights();
+    }
+
     Tensor<float> forward(Tensor<float> key, Tensor<float> query, Tensor<float> value){
       auto out = _mattention.forward(key, query, value);
       auto res = out + value;

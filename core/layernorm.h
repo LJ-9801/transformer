@@ -16,11 +16,9 @@ class LayerNorm{
             _eps(eps),
             _affine(elementwise_affine),
             _isbias(bias) 
-  {
-    this->generate_weight();
-  }
+  {}
 
-  void generate_weight(){
+  void generate_weights(){
     this->_weight = _affine ? 
                     Tensor<float>(this->_normalized_shape).fill_one() :
                     Tensor<float>();
