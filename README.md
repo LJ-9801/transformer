@@ -2,4 +2,4 @@
 A cpp implementation of a transformer
 
 ## TODO
-- Embedding
+- Verify Embedding and Positional Embedding

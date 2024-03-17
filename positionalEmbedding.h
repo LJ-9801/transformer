@@ -10,6 +10,7 @@ class PositionalEmbedding
     {
       _positional_embedding = Tensor<float>({1, max_seq_len, d_model});
 
+
       #pragma omp parallel for
       for (uint32_t pos = 0; pos < max_seq_len; ++pos) {
         for (uint32_t i = 0; i < d_model; ++i) {
@@ -26,6 +27,7 @@ class PositionalEmbedding
       x *= sqrt(_d_model);
       uint32_t seq_len = x.shape()[1];
 
+      // TODO implement tensor slicing and broadcasting
       #pragma omp parallel for
       for(uint32_t i = 0; i < x.shape()[0]; i++){
         for(uint32_t j = 0; j < x.shape()[2]; j++){
