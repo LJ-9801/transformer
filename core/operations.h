@@ -142,4 +142,39 @@ Tensor<T> masked_fill(const Tensor<T>& src, const Tensor<bool>& mask, T value)
 
   return trg;
 }
+
+template <typename T>
+Tensor<uint32_t> argmax(const Tensor<T>& src, uint32_t axis){
+  if(src.empty()){
+    return Tensor<uint32_t>();
+  }
+
+  if(axis < 0){
+    axis = src.ndim() + axis;
+  }
+
+  if(axis >= src.ndim()){
+    throw std::invalid_argument("Axis out of range");
+  }
+
+  shape_t new_shape = src.shape();
+  new_shape.erase(new_shape.begin() + axis);
+
+  Tensor<uint32_t> trg = Tensor<uint32_t>(new_shape);
+
+  #pragma omp parallel for
+  for (int i = 0; i < src.size(); ++i) {
+    uint32_t* trg_ptr = accessor<uint32_t>::get(trg);
+    T* src_ptr = accessor<T>::const_ptr(src);
+    uint32_t max_index = 0;
+    T max_value = src_ptr[i];
+    for(int j = 1; j < src.shape()[axis]; j++){
+      if(src_ptr[i] > max_value){
+        max_value = src_ptr[i];
+        max_index = j;
+      }
+    }
+    trg_ptr[i] = max_index;
+  }
+}
 #endif
